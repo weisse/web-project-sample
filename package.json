@@ -1,10 +1,10 @@
 {
   "name": "weisse-project-sample",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A weisse project sample",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/weisse/web-project-sample.git"
   },
   "scripts": {
     "postinstall": "gulp"
@@ -40,6 +40,7 @@
     "gulp-uglify": "^1.5.4",
     "gulp-uglifycss": "^1.0.6",
     "gulp-util": "^3.0.7",
+    "jspm": "^0.16.39",
     "live-server": "^1.0.0",
     "merge2": "^1.0.2",
     "pump": "^1.0.1",
