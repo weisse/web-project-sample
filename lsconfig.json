@@ -1,0 +1,9 @@
+{
+	"host": "0.0.0.0",
+	"root": "www",
+	"open": true,
+	"ignore": "ts,less,sass,scss",
+	"file": "index.html",
+	"wait": 1000,
+	"logLevel": 2
+}

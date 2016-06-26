@@ -1,0 +1,8 @@
+node_modules
+
+www/jspm_packages
+www/dist
+www/config.js
+
+# Mac
+.DS_Store
