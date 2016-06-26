@@ -24,7 +24,7 @@ var jsonminify = require("gulp-jsonminify");
 
 // configurations
 var liveServerConfig = require("./lsconfig.json");
-var tsProject = ts.createProject("tsconfig.json");
+var tsProject = ts.createProject("./tsconfig.json");
 
 gulp.task("clean:dist", function(){
     return gulp.src("www/dist")
@@ -152,23 +152,23 @@ gulp.task("compile", function(cb){
 });
 
 gulp.task("watch", function(cb){
-    runSequence(["watch:*", "watch:coffee", "watch:ts", "watch:less", "watch:sass", "watch:scss"], cb);
+    runSequence("watch:*", "watch:coffee", "watch:ts", "watch:less", "watch:sass", "watch:scss", cb);
 });
 
 gulp.task("dev", function(cb){
-    runSequence("copy", "compile", ["watch", "live-server"], cb);
+    runSequence("jspm:install", "copy", "compile", "watch", "live-server", cb);
 });
 
 gulp.task("uglify", function(cb){
     runSequence("uglify:js", "uglify:css", "uglify:json", cb);
 });
 
-gulp.task("build", function(cb){
-    runSequence("jspm:install", "copy", "compile", "uglify", cb);
+gulp.task("clean", function(cb){
+  runSequence("clean:dist", "clean:jspm", cb);
 });
 
-gulp.task("clean", function(cb){
-    runSequence("clean:dist", "clean:jspm", cb);
+gulp.task("build", function(cb){
+    runSequence("jspm:install", "copy", "compile", "uglify", cb);
 });
 
 gulp.task("default", function(cb){
