@@ -5,6 +5,7 @@ var gutil = require("gulp-util");
 var shell = require("gulp-shell");
 var clean = require("gulp-clean");
 var copy = require("gulp-copy");
+var sourcemaps = require("gulp-sourcemaps");
 var merge = require("merge2");
 var pump = require("pump");
 var runSequence = require("run-sequence");
@@ -13,6 +14,8 @@ var liveServer = require("live-server");
 // compilers
 var coffee = require("gulp-coffee");
 var ts = require("gulp-typescript");
+var react = require("gulp-react");
+var elm = require("gulp-elm");
 var less = require("gulp-less");
 var sass = require("gulp-sass");
 var scss = require("gulp-scss");
@@ -26,8 +29,22 @@ var jsonminify = require("gulp-jsonminify");
 var liveServerConfig = require("./lsconfig.json");
 var tsProject = ts.createProject("./tsconfig.json");
 
+// constants
+const DIST_PATH = "www/dist";
+const MAPS_PATH = ".";
+const NATIVE_PATHS = [
+    "www/src/**/*",
+    "!www/src/**/*.coffee",
+    "!www/src/**/*.ts",
+    "!www/src/**/*.jsx",
+    "!www/src/**/*.elm",
+    "!www/src/**/*.less",
+    "!www/src/**/*.sass",
+    "!www/src/**/*.scss"
+];
+
 gulp.task("clean:dist", function(){
-    return gulp.src("www/dist")
+    return gulp.src(DIST_PATH)
             .pipe(clean({force: true}));
 });
 
@@ -41,136 +58,148 @@ gulp.task("jspm:install", shell.task("jspm install", {
 }));
 
 gulp.task("copy", function(){
-    gulp
-        .src([
-            "www/src/**/*",
-            "!www/src/**/*.coffee",
-            "!www/src/**/*.ts",
-            "!www/src/**/*.less",
-            "!www/src/**/*.sass",
-            "!www/src/**/*.scss"
-        ])
-        .pipe(gulp.dest("www/dist"));
+    return gulp
+        .src(NATIVE_PATHS)
+        .pipe(gulp.dest(DIST_PATH));
 });
 
 gulp.task("compile:coffee", function() {
-    gulp.src('www/src/**/*.coffee')
-      .pipe(coffee({bare: true}).on('error', gutil.log))
-      .pipe(gulp.dest("www/dist"));
+    return gulp.src('www/src/**/*.coffee')
+        .pipe(sourcemaps.init())
+        .pipe(coffee({bare: true}).on('error', gutil.log))
+        .pipe(sourcemaps.write(MAPS_PATH))
+        .pipe(gulp.dest(DIST_PATH));
 });
 
 gulp.task("compile:ts", function(){
     var tsResult = gulp.src("www/src/**/*.ts")
+        .pipe(sourcemaps.init())
         .pipe(ts(tsProject));
 
     return merge([
-        tsResult.dts.pipe(gulp.dest("www/definitions")),
-        tsResult.js.pipe(gulp.dest("www/dist"))
+        tsResult.dts
+            .pipe(gulp.dest("www/definitions")),
+        tsResult.js
+            .pipe(sourcemaps.write(MAPS_PATH))
+            .pipe(gulp.dest(DIST_PATH))
     ]);
+});
+
+gulp.task("compile:react", function(){
+  	return gulp.src("www/src/**/*.jsx")
+    		.pipe(sourcemaps.init())
+    		.pipe(react())
+    		.pipe(sourcemaps.write(MAPS_PATH))
+    		.pipe(gulp.dest(DIST_PATH));
+});
+
+gulp.task("elm-init", elm.init);
+
+gulp.task("compile:elm", ["elm-init"], function(){
+    return gulp.src("www/src/**/*.elm")
+        .pipe(elm())
+        .pipe(gulp.dest(DIST_PATH));
 });
 
 gulp.task("compile:less", function () {
     return gulp.src("www/src/**/*.less")
+        .pipe(sourcemaps.init())
         .pipe(less())
+        .pipe(sourcemaps.write(MAPS_PATH))
         .pipe(gulp.dest('www/dist'));
 });
 
 gulp.task("compile:sass", function () {
     return gulp.src("www/src/**/*.scss")
+        .pipe(sourcemaps.init())
         .pipe(sass().on("error", sass.logError))
-        .pipe(gulp.dest("www/dist"));
+        .pipe(sourcemaps.write(MAPS_PATH))
+        .pipe(gulp.dest(DIST_PATH));
 });
 
 gulp.task("compile:scss", function () {
-    gulp.src("www/src/**/*.scss")
+    return gulp.src("www/src/**/*.scss")
+        .pipe(sourcemaps.init())
         .pipe(scss({"bundleExec": true}))
-        .pipe(gulp.dest("www/dist"));
+        .pipe(sourcemaps.write(MAPS_PATH))
+        .pipe(gulp.dest(DIST_PATH));
 });
 
 gulp.task("watch:*", function(){
-    gulp.watch([
-        "www/src/**/*",
-        "!www/src/**/*.coffee",
-        "!www/src/**/*.ts",
-        "!www/src/**/*.less",
-        "!www/src/**/*.sass",
-        "!www/src/**/*.scss"
-    ], ["copy"]);
+    return gulp.watch(NATIVE_PATHS, ["copy"]);
 });
 
 gulp.task("watch:coffee", function(){
-    gulp.watch("www/src/**/*.coffee", ["compile:coffee"]);
+    return gulp.watch("www/src/**/*.coffee", ["compile:coffee"]);
 });
 
 gulp.task("watch:ts", function(){
-    gulp.watch("www/src/**/*.ts", ["compile:ts"]);
+    return gulp.watch("www/src/**/*.ts", ["compile:ts"]);
+});
+
+gulp.task("watch:react", function(){
+    return gulp.watch("www/src/**/*.jsx", ["compile:react"]);
+});
+
+gulp.task("watch:elm", function(){
+    return gulp.watch("www/src/**/*.elm", ["compile:elm"]);
 });
 
 gulp.task("watch:less", function(){
-    gulp.watch("www/src/**/*.less", ["compile:less"]);
+    return gulp.watch("www/src/**/*.less", ["compile:less"]);
 });
 
 gulp.task("watch:sass", function(){
-    gulp.watch("www/src/**/*.sass", ["compile:sass"]);
+    return gulp.watch("www/src/**/*.sass", ["compile:sass"]);
 });
 
 gulp.task("watch:scss", function(){
-    gulp.watch("www/src/**/*.scss", ["compile:scss"]);
+    return gulp.watch("www/src/**/*.scss", ["compile:scss"]);
 });
 
 gulp.task("live-server", function(cb){
-    liveServer.start(liveServerConfig);
+    return liveServer.start(liveServerConfig);
 });
 
-gulp.task("uglify:js", function(cb){
-    pump([
-          gulp.src('www/dist/**/*.js'),
-          uglify(),
-          gulp.dest("www/dist")
-      ],
-      cb
-    );
+gulp.task("uglify:js", function(){
+    return gulp.src('www/dist/**/*.js')
+        .pipe(uglify())
+        .pipe(gulp.dest(DIST_PATH));
 });
 
 gulp.task("uglify:css", function(){
-    gulp.src("www/dist/**/*.css")
+    return gulp.src("www/dist/**/*.css")
         .pipe(uglifycss({
             "maxLineLen": 80,
             "uglyComments": true
         }))
-        .pipe(gulp.dest("www/dist"));
+        .pipe(gulp.dest(DIST_PATH));
 });
 
 gulp.task("uglify:json", function(){
     return gulp.src(['www/dist/**/*.json'])
         .pipe(jsonminify())
-        .pipe(gulp.dest("www/dist"));
+        .pipe(gulp.dest(DIST_PATH));
 });
 
-gulp.task("compile", function(cb){
-    runSequence("compile:coffee", "compile:ts", "compile:less", "compile:sass", "compile:scss", cb);
-});
+gulp.task("compile", ["compile:coffee", "compile:ts", "compile:react", "compile:elm", "compile:less", "compile:sass", "compile:scss"]);
 
-gulp.task("watch", function(cb){
-    runSequence("watch:*", "watch:coffee", "watch:ts", "watch:less", "watch:sass", "watch:scss", cb);
-});
+gulp.task("watch", ["watch:*", "watch:coffee", "watch:ts", "watch:react", "watch:elm", "watch:less", "watch:sass", "watch:scss"]);
 
 gulp.task("dev", function(cb){
-    runSequence("jspm:install", "copy", "compile", "watch", "live-server", cb);
+    return runSequence("jspm:install", "copy", "compile", "watch", "live-server", cb);
 });
 
-gulp.task("uglify", function(cb){
-    runSequence("uglify:js", "uglify:css", "uglify:json", cb);
-});
+gulp.task("uglify", ["uglify:js", "uglify:css", "uglify:json"]);
 
 gulp.task("clean", function(cb){
-  runSequence("clean:dist", "clean:jspm", cb);
+    return runSequence("clean:dist", "clean:jspm", cb);
 });
 
 gulp.task("build", function(cb){
-    runSequence("jspm:install", "copy", "compile", "uglify", cb);
+    return runSequence("jspm:install", "copy", "compile", "uglify", cb);
 });
 
 gulp.task("default", function(cb){
-    runSequence("clean", "build", cb);
+    return runSequence("clean", "build", cb);
 });

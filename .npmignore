@@ -1,3 +1,7 @@
+node_modules
+elm-stuff
+elm-package.json
+
 www/jspm_packages
 www/dist
 www/config.js

@@ -9,9 +9,11 @@
     </head>
     <body>
         <script>
-            System.import("dist/main.js").then(function(app){
+            System.import("dist/main.js").then(function(App){
+                var app = new App.Main();
                 app.start();
             });
         </script>
+        <div id="main-wrapper"></div>
     </body>
 </html>
