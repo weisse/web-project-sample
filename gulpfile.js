@@ -157,7 +157,7 @@ gulp.task("watch:scss", function(){
     return gulp.watch("www/src/**/*.scss", ["compile:scss"]);
 });
 
-gulp.task("live-server", function(cb){
+gulp.task("live", function(cb){
     return liveServer.start(liveServerConfig);
 });
 
@@ -182,13 +182,17 @@ gulp.task("uglify:json", function(){
         .pipe(gulp.dest(DIST_PATH));
 });
 
-gulp.task("compile", ["compile:coffee", "compile:ts", "compile:react", "compile:elm", "compile:less", "compile:sass", "compile:scss"]);
+gulp.task(
+    "compile",
+    ["compile:coffee", "compile:ts", "compile:react", "compile:elm",
+    "compile:less", "compile:sass", "compile:scss"]
+);
 
-gulp.task("watch", ["watch:*", "watch:coffee", "watch:ts", "watch:react", "watch:elm", "watch:less", "watch:sass", "watch:scss"]);
-
-gulp.task("dev", function(cb){
-    return runSequence("jspm:install", "copy", "compile", "watch", "live-server", cb);
-});
+gulp.task(
+    "watch",
+    ["watch:*", "watch:coffee", "watch:ts", "watch:react",
+    "watch:elm", "watch:less", "watch:sass", "watch:scss"]
+);
 
 gulp.task("uglify", ["uglify:js", "uglify:css", "uglify:json"]);
 
@@ -196,10 +200,48 @@ gulp.task("clean", function(cb){
     return runSequence("clean:dist", "clean:jspm", cb);
 });
 
+gulp.task("dev:dist", function(cb){
+    return runSequence(
+        "clean:dist", "copy", "compile", "watch", "live", cb
+    );
+});
+
+gulp.task("dev", function(cb){
+    return runSequence("clean:jspm", "jspm:install", "dev:dist", cb);
+});
+
+gulp.task("build:dist:dev", function(cb){
+    return runSequence("copy", "compile", cb);
+});
+
+gulp.task("build:dist", function(cb){
+    return runSequence("build:dist:dev", "uglify", cb);
+});
+
+gulp.task("build:dev", function(cb){
+    return runSequence("jspm:install", "build:dist:dev", cb);
+});
+
 gulp.task("build", function(cb){
-    return runSequence("jspm:install", "copy", "compile", "uglify", cb);
+    return runSequence("jspm:install", "build:dist", cb);
+});
+
+gulp.task("rebuild:dist:dev", function(cb){
+    return runSequence("clean:dist", "build:dist:dev", cb);
+});
+
+gulp.task("rebuild:dist", function(cb){
+    return runSequence("clean:dist", "build:dist", cb);
+});
+
+gulp.task("rebuild:dev", function(cb){
+    return runSequence("clean", "build:dev", cb);
+});
+
+gulp.task("rebuild", function(cb){
+    return runSequence("clean", "build", cb);
 });
 
 gulp.task("default", function(cb){
-    return runSequence("clean", "build", cb);
+    return runSequence("rebuild", cb);
 });

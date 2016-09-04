@@ -6,14 +6,16 @@
         <script src="jspm_packages/system.js"></script>
         <script src="config.js"></script>
         <title>Weisse project sample</title>
+        <script>
+            window.define = System.amdDefine;
+            window.require = window.requirejs = System.amdRequire;
+        </script>
     </head>
     <body>
         <script>
-            System.import("dist/main.js").then(function(App){
-                var app = new App.Main();
-                app.start();
-            });
+            window.onload = function(){
+                System.import("dist/init.js");
+            }
         </script>
-        <div id="main-wrapper"></div>
     </body>
 </html>
