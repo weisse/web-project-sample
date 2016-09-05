@@ -14,8 +14,11 @@
     <body>
         <script>
             window.onload = function(){
-                System.import("dist/init.js");
+                System.import("dist/main").then(function(Class){
+                    (new Class.Main()).start();
+                });
             }
         </script>
+        <div id="main-wrapper"></div>
     </body>
 </html>
